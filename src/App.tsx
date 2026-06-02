@@ -6,10 +6,12 @@ import Experience from "./components/Experience";
 import Projects from "./components/Projects";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import BmoViewer from "./components/BmoViewer";
 
 function App() {
   return (
-    <div className="antialiased">
+    <div className="antialiased relative">
+      <BmoViewer />
       <Navbar />
       <Hero />
       <About />
