@@ -25,9 +25,9 @@ export const aboutData = {
   education: [
     {
       degree: "Bachelor of Science in Information Technology",
-      school: "University / College of Technology",
+      school: "University of the Immaculate Conception, Davao City",
       year: "2022 – Present",
-      description: "Focusing on software development, database management, networking, and system analysis.",
+      description: "Focusing on UI and frontend",
     },
     {
       degree: "Senior High School – ICT Strand",
