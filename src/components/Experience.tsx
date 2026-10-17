@@ -1,80 +1,110 @@
-import { Briefcase, CheckCircle2 } from "lucide-react";
-import { experienceData } from "../data/portfolio";
+import { motion } from "framer-motion";
+import { aboutData, experienceData } from "../data/portfolio";
+import { sections } from "../lib/sections";
+import SectionHeader from "./ui/SectionHeader";
 
-function SectionLabel({ text }: { text: string }) {
-  return (
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
-      {text}
-    </div>
-  );
+const meta = sections.find((s) => s.id === "log")!;
+
+interface LogEntry {
+  version: string;
+  period: string;
+  title: string;
+  org: string;
+  kind: string;
+  notes: string[];
+  current: boolean;
 }
 
-const typeBadgeColors: Record<string, string> = {
-  Internship: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  Freelance: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  Volunteer: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-};
+/** Merge work history and education into one reverse-chronological changelog. */
+function buildLog(): LogEntry[] {
+  const work: LogEntry[] = experienceData.map((e) => ({
+    version: "",
+    period: e.period,
+    title: e.role,
+    org: e.company,
+    kind: e.type,
+    notes: e.responsibilities,
+    current: /present/i.test(e.period),
+  }));
+  const edu: LogEntry[] = aboutData.education.map((e) => ({
+    version: "",
+    period: e.year,
+    title: e.degree,
+    org: e.school,
+    kind: "Education",
+    notes: [e.description],
+    current: /present/i.test(e.year),
+  }));
+
+  const startYear = (p: string) => parseInt(p.match(/\d{4}/)?.[0] ?? "0", 10);
+  const all = [...work, ...edu].sort((a, b) => startYear(b.period) - startYear(a.period));
+  return all.map((entry, i) => ({ ...entry, version: `v${all.length - i}.0` }));
+}
 
 export default function Experience() {
+  const log = buildLog();
+
   return (
-    <section id="experience" className="py-24 lg:py-32 bg-transparent">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <SectionLabel text="Experience" />
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            Work Experience
-          </h2>
-          <p className="text-slate-400 mt-4 max-w-2xl mx-auto text-lg">
-            My hands-on professional journey — roles, responsibilities, and real-world contributions.
-          </p>
-        </div>
+    <section id="log" className="relative border-t border-white/[0.05] py-28 lg:py-36">
+      <div className="shell">
+        <SectionHeader
+          meta={meta}
+          title={
+            <>
+              Changelog,
+              <span className="text-fg-subtle"> release by release.</span>
+            </>
+          }
+          description="Experience and education, versioned like software. Each release added something to the system."
+        />
 
-        <div className="relative">
-          <div className="absolute left-0 lg:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-500/40 via-blue-500/20 to-transparent hidden sm:block" />
-
-          <div className="space-y-8">
-            {experienceData.map((job, i) => (
-              <div
-                key={i}
-                className={`relative flex flex-col sm:flex-row gap-6 ${
-                  i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-                }`}
-              >
-                <div className="hidden sm:flex absolute left-0 lg:left-1/2 -translate-x-1/2 w-10 h-10 bg-slate-950 border-2 border-blue-500/40 rounded-full items-center justify-center z-10">
-                  <Briefcase className="w-4 h-4 text-blue-400" />
-                </div>
-
-                <div className={`flex-1 sm:pl-10 lg:pl-0 ${i % 2 === 0 ? "lg:pr-14 lg:text-right" : "lg:pl-14"}`}>
-                  <div className="bg-slate-900 border border-white/5 rounded-2xl p-6 hover:border-blue-500/20 transition-all duration-200 hover:-translate-y-0.5">
-                    <div className={`flex flex-wrap items-start gap-3 mb-4 ${i % 2 === 0 ? "lg:flex-row-reverse" : ""}`}>
-                      <div className={`flex-1 ${i % 2 === 0 ? "lg:text-right" : ""}`}>
-                        <h3 className="text-white font-bold text-lg">{job.role}</h3>
-                        <p className="text-blue-400 font-medium text-sm mt-0.5">{job.company}</p>
-                        <p className="text-slate-500 text-sm mt-0.5">{job.period}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${typeBadgeColors[job.type] || "bg-slate-700 text-slate-300 border-slate-600"}`}>
-                        {job.type}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {job.responsibilities.map((resp, j) => (
-                        <div
-                          key={j}
-                          className={`flex items-start gap-2 ${i % 2 === 0 ? "lg:flex-row-reverse" : ""}`}
-                        >
-                          <CheckCircle2 className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-slate-400 text-sm leading-relaxed">{resp}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 hidden lg:block" />
+        <ol className="relative">
+          {log.map((e, i) => (
+            <motion.li
+              key={e.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.6, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+              className="group grid gap-4 border-b border-white/[0.06] py-10 first:pt-0 last:border-0 md:grid-cols-12 md:gap-8"
+            >
+              <div className="flex items-center gap-3 md:col-span-3 md:flex-col md:items-start md:gap-2">
+                <span
+                  className={`rounded-md border px-2 py-0.5 font-mono text-[12px] ${
+                    e.current ? "border-accent/40 bg-accent/10 text-accent" : "border-white/10 text-fg-muted"
+                  }`}
+                >
+                  {e.version}
+                </span>
+                <span className="font-mono text-[12px] text-fg-subtle">{e.period}</span>
+                {e.current && (
+                  <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-subtle">
+                    <span className="status-dot" /> current
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+
+              <div className="md:col-span-9">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                  <h3 className="text-2xl font-semibold tracking-tight text-fg transition-colors group-hover:text-white sm:text-[1.7rem]">
+                    {e.title}
+                  </h3>
+                  <span className="chip">{e.kind}</span>
+                </div>
+                <p className="mt-1.5 text-fg-subtle">{e.org}</p>
+
+                <ul className="mt-6 space-y-2.5">
+                  {e.notes.map((n) => (
+                    <li key={n} className="flex gap-3 text-[15px] leading-relaxed text-fg-muted">
+                      <span className="select-none font-mono text-accent">+</span>
+                      <span>{n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.li>
+          ))}
+        </ol>
       </div>
     </section>
   );

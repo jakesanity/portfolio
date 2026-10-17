@@ -1,250 +1,200 @@
-import {
-  Download,
-  Mail,
-  Linkedin,
-  Github,
-  ChevronDown,
-  Star,
-  Code,
-  Zap,
-  Mouse,
-  Rocket,
-  Award,
-  Briefcase,
-} from "lucide-react";
-import { personalInfo } from "../data/portfolio";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowDownRight, ArrowUpRight, Download } from "lucide-react";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { aboutData, personalInfo, projectsData, skillsData } from "../data/portfolio";
+import { useIsMac } from "../lib/hooks";
+import { scrollToSection } from "../lib/sections";
+
+const HeroCore = lazy(() => import("./HeroCore"));
+
+const ROLES = ["full-stack web systems", "workflow platforms", "machine learning tools", "clean user interfaces"];
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+function RotatingRole() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => setI((v) => (v + 1) % ROLES.length), 2600);
+    return () => window.clearInterval(t);
+  }, []);
+  return (
+    <span className="relative inline-flex h-[1.5em] items-center overflow-hidden align-bottom">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={ROLES[i]}
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "-100%", opacity: 0 }}
+          transition={{ duration: 0.4, ease }}
+          className="text-fg"
+        >
+          {ROLES[i]}
+        </motion.span>
+      </AnimatePresence>
+      <span className="caret ml-1" />
+    </span>
+  );
+}
 
 export default function Hero() {
-  const scrollToAbout = () => {
-    const el = document.querySelector("#about");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
+  const isMac = useIsMac();
+  const [first, ...rest] = personalInfo.name.split(" ");
+  const last = rest.pop();
+  const middle = rest.join(" ");
+
+  const stats = [
+    { k: "Projects", v: String(projectsData.length).padStart(2, "0"), s: "shipped and in progress" },
+    { k: "Stack", v: String(skillsData.technical.length).padStart(2, "0"), s: "core technologies" },
+    { k: "Certs", v: String(aboutData.certifications.length).padStart(2, "0"), s: "industry certificates" },
+    { k: "Since", v: "2022", s: "studying IT full-time" },
+  ];
 
   return (
-    <section
-      id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-transparent"
-    >
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-blue-950/20 to-transparent" />
-        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-cyan-400/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute inset-0 bg-[url('/images/grid.svg')] bg-center opacity-10" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:48px_48px]" />
-      </div>
+    <section id="top" className="relative isolate flex min-h-[100svh] flex-col overflow-hidden pt-16">
+      {/* Background */}
+      <div className="absolute inset-0 -z-10 bg-grid mask-fade-b opacity-70" />
+      <div className="absolute left-1/2 top-[-20%] -z-10 h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(198,255,61,0.08),transparent)]" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center lg:text-left"
-          >
+      <div className="shell relative flex flex-1 items-center">
+        <div className="grid w-full items-center gap-10 py-16 lg:grid-cols-12 lg:py-10">
+          {/* Copy */}
+          <div className="relative z-10 lg:col-span-7">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm font-medium mb-6 backdrop-blur-sm"
+              transition={{ duration: 0.6, ease, delay: 0.1 }}
+              className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/10 bg-ink-850/80 py-1.5 pl-3 pr-4 backdrop-blur"
             >
-              <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-              <Star className="w-4 h-4 text-yellow-400" />
-              Available for opportunities
-              <Star className="w-4 h-4 text-yellow-400" />
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-6"
-            >
-              <span className="text-slate-400">Hello, I'm</span><br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-emerald-400">
-                Aldwin James
+              <span className="status-dot" />
+              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg-muted">
+                Open to internships and freelance work
               </span>
-            </motion.h1>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-xl sm:text-2xl lg:text-3xl font-medium text-slate-300 mb-4 flex items-center gap-3"
-            >
-              <Code className="text-blue-400" />
-              {personalInfo.title}
-            </motion.h2>
+            </motion.div>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-slate-400 text-lg max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mb-4 font-mono text-[12px] text-fg-subtle"
             >
-              <Zap className="inline w-5 h-5 text-yellow-400 mr-2" />
-              Passionate about building meaningful digital experiences through
-              clean code, thoughtful design, and continuous learning.
+              <span className="text-accent">$</span> whoami
             </motion.p>
 
+            <h1 className="text-[clamp(2.75rem,8vw,6.5rem)] font-semibold leading-[0.92] tracking-tightest text-fg">
+              {[`${first} ${middle}`, last].map((line, idx) => (
+                <span key={idx} className="block overflow-hidden pb-[0.06em]">
+                  <motion.span
+                    initial={{ y: "105%" }}
+                    animate={{ y: 0 }}
+                    transition={{ duration: 0.9, ease, delay: 0.25 + idx * 0.1 }}
+                    className={`block ${idx === 1 ? "text-fg-subtle" : ""}`}
+                  >
+                    {line}
+                    {idx === 1 && <span className="text-accent">.</span>}
+                  </motion.span>
+                </span>
+              ))}
+            </h1>
+
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-10"
+              transition={{ duration: 0.7, ease, delay: 0.55 }}
+              className="mt-8 max-w-xl"
             >
-              <motion.a
-                href={personalInfo.resumeUrl}
-                download
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-blue-500/40 w-full sm:w-auto justify-center"
-              >
-                <Download className="w-4 h-4" />
-                Download Resume
-              </motion.a>
-              <motion.button
-                onClick={() => {
-                  const el = document.querySelector("#contact");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }}
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-7 py-3.5 border border-slate-600 hover:border-blue-500 text-slate-300 hover:text-white font-semibold rounded-xl transition-all duration-200 hover:bg-white/5 w-full sm:w-auto justify-center"
-              >
-                <Mail className="w-4 h-4" />
-                Get In Touch
-              </motion.button>
+              <p className="font-mono text-sm text-fg-muted sm:text-[15px]">
+                <span className="text-fg-faint">&gt; </span>
+                {personalInfo.title.toLowerCase()} building <RotatingRole />
+              </p>
+              <p className="mt-5 text-base leading-relaxed text-fg-muted sm:text-lg">
+                I design and engineer dependable software, from research workflow systems to healthcare
+                platforms and predictive analytics, with a focus on clarity, structure and real-world use.
+              </p>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="flex items-center justify-center lg:justify-start gap-4"
+              transition={{ duration: 0.7, ease, delay: 0.7 }}
+              className="mt-10 flex flex-wrap items-center gap-3"
             >
-              <motion.a
-                href={personalInfo.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.9 }}
-                className="w-12 h-12 flex items-center justify-center rounded-lg bg-white/5 hover:bg-blue-500/20 border border-white/10 hover:border-blue-500/40 text-slate-400 hover:text-blue-400 transition-all duration-200"
-              >
-                <Linkedin className="w-5 h-5" />
-              </motion.a>
-              <motion.a
-                href={personalInfo.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.9 }}
-                className="w-12 h-12 flex items-center justify-center rounded-lg bg-white/5 hover:bg-blue-500/20 border border-white/10 hover:border-blue-500/40 text-slate-400 hover:text-blue-400 transition-all duration-200"
-              >
-                <Github className="w-5 h-5" />
-              </motion.a>
-              <motion.a
-                href={`mailto:${personalInfo.email}`}
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.9 }}
-                className="w-12 h-12 flex items-center justify-center rounded-lg bg-white/5 hover:bg-blue-500/20 border border-white/10 hover:border-blue-500/40 text-slate-400 hover:text-blue-400 transition-all duration-200"
-              >
-                <Mail className="w-5 h-5" />
-              </motion.a>
+              <button id="hero-explore-work" onClick={() => scrollToSection("work")} className="btn-primary group">
+                Explore work
+                <ArrowDownRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+              </button>
+              <a id="hero-download-cv" href={personalInfo.resumeUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost">
+                <Download className="h-4 w-4" />
+                Download CV
+              </a>
+              <span className="ml-1 hidden items-center gap-2 font-mono text-[11px] text-fg-subtle sm:flex">
+                or press <span className="kbd">{isMac ? "\u2318" : "Ctrl"}</span>
+                <span className="kbd">K</span>
+              </span>
             </motion.div>
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.9 }}
-              className="mt-12 flex items-center justify-center lg:justify-start gap-8"
-            >
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Award className="w-5 h-5 text-yellow-400" />
-                  <span className="text-2xl font-bold text-white">3+</span>
-                </div>
-                <p className="text-slate-400 text-sm">Projects Completed</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Briefcase className="w-5 h-5 text-blue-400" />
-                  <span className="text-2xl font-bold text-white">1+</span>
-                </div>
-                <p className="text-slate-400 text-sm">Years Experience</p>
-              </div>
-            </motion.div>
-          </motion.div>
-
+          {/* Visual */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex-shrink-0 flex justify-center lg:justify-end"
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.4, ease, delay: 0.3 }}
+            className="pointer-events-none absolute inset-0 opacity-40 lg:pointer-events-auto lg:relative lg:col-span-5 lg:aspect-square lg:opacity-100"
           >
-            <div className="relative group">
-              <div className="absolute -inset-6 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 rounded-3xl blur-xl group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 rounded-3xl overflow-hidden ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-300 group-hover:scale-105">
-                <img
-                  src={personalInfo.photo}
-                  alt={personalInfo.name}
-                  className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-slate-800/80 backdrop-blur-sm border border-white/10 rounded-xl p-3">
-                    <p className="text-white font-semibold text-sm">Aspiring Full-Stack Developer</p>
-                    <p className="text-slate-400 text-xs mt-1">Tech Enthusiast & Problem Solver</p>
-                  </div>
-                </div>
+            <Suspense fallback={<div className="absolute inset-0 bg-dots opacity-50 mask-radial" />}>
+              <HeroCore />
+            </Suspense>
+            <div className="pointer-events-none absolute inset-0 hidden font-mono text-[10px] uppercase tracking-[0.14em] text-fg-faint lg:block">
+              <div className="absolute left-0 top-4 flex flex-col gap-1">
+                <span className="text-fg-subtle">core.sys</span>
+                <span>render / webgl</span>
               </div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 1.2 }}
-                className="absolute -top-4 -right-4 bg-slate-800 border border-white/10 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-sm"
-              >
-                <p className="text-blue-400 font-bold text-lg leading-none flex items-center gap-1">
-                  <Rocket className="w-5 h-5" />
-                  IT
-                </p>
-                <p className="text-slate-400 text-xs mt-0.5">Student</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 1.1 }}
-                className="absolute -bottom-4 -left-4 bg-slate-800 border border-white/10 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-sm"
-              >
-                <p className="text-white font-bold text-lg leading-none">🌟</p>
-                <p className="text-slate-400 text-xs mt-0.5">Based in Philippines</p>
-              </motion.div>
+              <div className="absolute right-0 top-4 text-right">
+                <span className="block text-fg-subtle">node</span>
+                <span>ph-mnl-01</span>
+              </div>
+              <div className="absolute bottom-4 left-0">
+                <span className="block">lat 14.5995 n</span>
+                <span>lon 120.9842 e</span>
+              </div>
+              <div className="absolute bottom-4 right-0 flex items-center gap-2">
+                <span className="status-dot" /> online
+              </div>
             </div>
           </motion.div>
         </div>
       </div>
 
-      <motion.button
-        onClick={scrollToAbout}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.5 }}
-        whileHover={{ y: -5 }}
-        whileTap={{ y: 2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400 hover:text-white transition-all"
+      {/* Telemetry strip */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.9 }}
+        className="relative border-t border-white/[0.07] bg-ink-900/60 backdrop-blur"
       >
-        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500/20 hover:border-blue-500/40 transition-all">
-          <ChevronDown className="w-5 h-5 animate-bounce" />
+        <div className="shell grid grid-cols-2 lg:grid-cols-4">
+          {stats.map((s, i) => (
+            <div
+              key={s.k}
+              className={`flex items-end justify-between gap-4 py-6 ${i % 2 === 1 ? "pl-5 sm:pl-8" : "pr-5 sm:pr-8"} ${
+                i > 0 ? "lg:border-l lg:border-white/[0.07] lg:pl-8" : ""
+              } ${i % 2 === 1 ? "border-l border-white/[0.07]" : ""} ${i < 2 ? "border-b border-white/[0.07] lg:border-b-0" : ""}`}
+            >
+              <div>
+                <p className="label">{s.k}</p>
+                <p className="mt-2 text-xs text-fg-subtle">{s.s}</p>
+              </div>
+              <p className="font-mono text-3xl font-medium tracking-tight text-fg sm:text-4xl">{s.v}</p>
+            </div>
+          ))}
         </div>
-        <span className="text-xs font-medium">Scroll Down</span>
-      </motion.button>
+      </motion.div>
 
-      <div className="absolute bottom-4 left-4 text-slate-500 text-xs flex items-center gap-2">
-        <Mouse className="w-4 h-4" />
-        <span>Explore my work</span>
-      </div>
+      <button
+        onClick={() => scrollToSection("about")}
+        className="absolute bottom-28 right-8 hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-subtle transition-colors hover:text-fg xl:flex"
+      >
+        scroll <ArrowUpRight className="h-3 w-3 rotate-90" />
+      </button>
     </section>
   );
 }
