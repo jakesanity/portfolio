@@ -1,14 +1,73 @@
-import { motion } from "framer-motion";
-import { Code, Database, FileText, Image, Palette, Settings, type LucideIcon } from "lucide-react";
-import { skillsData } from "../data/portfolio";
-import { sections } from "../lib/sections";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowUpDown,
+  ChevronRight,
+  Code,
+  Database,
+  FileText,
+  Image,
+  Palette,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
+import { useState } from "react";
+import { projectsData, skillsData } from "../data/portfolio";
+import { sections, selectProject } from "../lib/sections";
+import { sfx } from "../lib/system";
 import SectionHeader from "./ui/SectionHeader";
+import XRaySlider from "./ui/XRaySlider";
 
 const meta = sections.find((s) => s.id === "stack")!;
 
 const ICONS: Record<string, LucideIcon> = { Code, Palette, Database, FileText, Settings, Image };
 
 const SEGMENTS = 24;
+
+const SKILL_META: Record<
+  string,
+  { summary: string; tools: string[]; projects: string[] }
+> = {
+  "HTML / CSS / Tailwind": {
+    summary: "Semantic markup, responsive grid layouts, design token systems, and accessible high-contrast interfaces.",
+    tools: ["Tailwind CSS", "CSS Grid / Flexbox", "Figma Tokens", "Responsive UI"],
+    projects: ["recheck", "elderlycare"],
+  },
+  "JavaScript / TypeScript": {
+    summary: "Type-safe application logic, asynchronous REST API integration, state management, and interactive DOM systems.",
+    tools: ["TypeScript", "ES2024+", "REST APIs", "Async Workflows"],
+    projects: ["recheck", "elderlycare"],
+  },
+  "React.js": {
+    summary: "Component-driven SPA architecture, custom hooks, Framer Motion animations, and real-time dashboard interfaces.",
+    tools: ["React 18", "Hooks", "Framer Motion", "Vite"],
+    projects: ["recheck", "elderlycare"],
+  },
+  Python: {
+    summary: "Data preprocessing, RFM feature engineering, unsupervised K-Means clustering, and demand trend forecasting.",
+    tools: ["Scikit-Learn", "Pandas", "NumPy", "Data Pipelines"],
+    projects: ["insightai"],
+  },
+  "PHP / Laravel": {
+    summary: "Server-side MVC architecture, role-based access control (RBAC), authentication, and governance workflow backends.",
+    tools: ["Laravel", "MVC", "RBAC Auth", "REST Controllers"],
+    projects: ["recheck"],
+  },
+  "MySQL / PostgreSQL": {
+    summary: "Relational schema normalization, foreign-key integrity, audit log tables, and analytical SQL queries.",
+    tools: ["MySQL Workbench", "ER Modeling", "Indexing", "Audit Logs"],
+    projects: ["recheck", "elderlycare", "insightai"],
+  },
+  Java: {
+    summary: "Object-oriented programming fundamentals, data structures, desktop/console systems, and strongly typed design patterns.",
+    tools: ["OOP", "Data Structures", "Algorithms", "JVM"],
+    projects: [],
+  },
+  "Git & Linux CLI": {
+    summary: "Branch-based version control, collaborative repository workflows, shell scripting, and local server administration.",
+    tools: ["Git", "GitHub", "Bash / Zsh", "Apache / XAMPP"],
+    projects: ["recheck", "elderlycare", "insightai"],
+  },
+};
 
 const reveal = {
   initial: { opacity: 0, y: 20 },
@@ -36,7 +95,32 @@ function SegmentBar({ level, delay }: { level: number; delay: number }) {
 }
 
 export default function Skills() {
+  const [expanded, setExpanded] = useState<string | null>("React.js");
+  const [sortBy, setSortBy] = useState<"pid" | "name" | "level">("pid");
+  const [sortAsc, setSortAsc] = useState(true);
+
   const avg = Math.round(skillsData.technical.reduce((a, s) => a + s.level, 0) / skillsData.technical.length);
+
+  const indexedSkills = skillsData.technical.map((s, i) => ({
+    ...s,
+    pid: 1024 + i * 7,
+  }));
+
+  const sortedSkills = [...indexedSkills].sort((a, b) => {
+    const dir = sortAsc ? 1 : -1;
+    if (sortBy === "pid") return (a.pid - b.pid) * dir;
+    if (sortBy === "name") return a.name.localeCompare(b.name) * dir;
+    return (b.level - a.level) * dir;
+  });
+
+  const handleSort = (col: "pid" | "name" | "level") => {
+    sfx.tick();
+    if (sortBy === col) setSortAsc((v) => !v);
+    else {
+      setSortBy(col);
+      setSortAsc(true);
+    }
+  };
 
   return (
     <section id="stack" className="relative border-t border-white/[0.05] py-28 lg:py-36">
@@ -50,7 +134,7 @@ export default function Skills() {
               <span className="text-fg-subtle"> monitored live.</span>
             </>
           }
-          description="Technical proficiency, tools and working traits, presented the way a system reports its own processes."
+          description="Technical proficiency, tools and working traits, presented the way a system reports its own processes. Click any process row to inspect it."
           aside={
             <div className="flex gap-8 font-mono">
               <div>
@@ -70,32 +154,127 @@ export default function Skills() {
           <motion.div {...reveal} className="panel overflow-hidden lg:col-span-7">
             <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
               <p className="font-mono text-[11px] text-fg-subtle">
-                <span className="text-accent">$</span> top --skills
+                <span className="text-accent">$</span> top --skills --interactive
               </p>
               <span className="flex items-center gap-2 font-mono text-[11px] text-fg-subtle">
-                <span className="status-dot" /> running
+                <span className="status-dot" /> click row to inspect
               </span>
             </div>
-            <div className="grid grid-cols-[44px_1fr_auto] gap-x-4 border-b border-white/[0.07] px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-faint sm:grid-cols-[44px_170px_1fr_52px]">
-              <span>pid</span>
-              <span>process</span>
+
+            <div className="grid grid-cols-[54px_1fr_auto] gap-x-4 border-b border-white/[0.07] px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-faint sm:grid-cols-[54px_180px_1fr_58px]">
+              <button
+                type="button"
+                onClick={() => handleSort("pid")}
+                className="flex items-center gap-1 text-left transition-colors hover:text-fg"
+              >
+                pid <ArrowUpDown className="h-2.5 w-2.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSort("name")}
+                className="flex items-center gap-1 text-left transition-colors hover:text-fg"
+              >
+                process <ArrowUpDown className="h-2.5 w-2.5" />
+              </button>
               <span className="hidden sm:block">proficiency</span>
-              <span className="text-right">lvl</span>
+              <button
+                type="button"
+                onClick={() => handleSort("level")}
+                className="flex items-center justify-end gap-1 text-right transition-colors hover:text-fg"
+              >
+                lvl <ArrowUpDown className="h-2.5 w-2.5" />
+              </button>
             </div>
+
             <ul>
-              {skillsData.technical.map((s, i) => (
-                <li
-                  key={s.name}
-                  className="group grid grid-cols-[44px_1fr_auto] items-center gap-x-4 gap-y-2 border-b border-white/[0.04] px-5 py-3.5 transition-colors last:border-0 hover:bg-white/[0.02] sm:grid-cols-[44px_170px_1fr_52px]"
-                >
-                  <span className="font-mono text-[11px] text-fg-faint">{String(1024 + i * 7)}</span>
-                  <span className="truncate text-sm text-fg transition-colors group-hover:text-accent">{s.name}</span>
-                  <span className="col-span-3 row-start-2 sm:col-span-1 sm:row-start-auto">
-                    <SegmentBar level={s.level} delay={i * 0.05} />
-                  </span>
-                  <span className="text-right font-mono text-[12px] text-fg-muted sm:row-start-auto">{s.level}%</span>
-                </li>
-              ))}
+              {sortedSkills.map((s, i) => {
+                const isOpen = expanded === s.name;
+                const detail = SKILL_META[s.name];
+                return (
+                  <li key={s.name} className="border-b border-white/[0.04] last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sfx.tick();
+                        setExpanded(isOpen ? null : s.name);
+                      }}
+                      className={`group grid w-full grid-cols-[54px_1fr_auto] items-center gap-x-4 gap-y-2 px-5 py-3.5 text-left transition-colors sm:grid-cols-[54px_180px_1fr_58px] ${
+                        isOpen ? "bg-white/[0.035]" : "hover:bg-white/[0.02]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 font-mono text-[11px] text-fg-faint">
+                        <ChevronRight
+                          className={`h-3 w-3 transition-transform ${isOpen ? "rotate-90 text-accent" : "text-fg-faint"}`}
+                        />
+                        {s.pid}
+                      </span>
+                      <span
+                        className={`truncate text-sm font-medium transition-colors ${
+                          isOpen ? "text-accent" : "text-fg group-hover:text-accent"
+                        }`}
+                      >
+                        {s.name}
+                      </span>
+                      <span className="col-span-3 row-start-2 sm:col-span-1 sm:row-start-auto">
+                        <SegmentBar level={s.level} delay={i * 0.04} />
+                      </span>
+                      <span className="text-right font-mono text-[12px] text-fg-muted sm:row-start-auto">{s.level}%</span>
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && detail && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.22 }}
+                          className="overflow-hidden bg-ink-900/70"
+                        >
+                          <div className="space-y-3 border-t border-white/[0.05] px-5 py-4">
+                            <p className="text-xs leading-relaxed text-fg-muted">{detail.summary}</p>
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex flex-wrap gap-1.5">
+                                {detail.tools.map((t) => (
+                                  <span
+                                    key={t}
+                                    className="rounded border border-white/[0.08] bg-ink-850 px-2 py-0.5 font-mono text-[10px] text-fg-subtle"
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {detail.projects.length > 0 && (
+                                <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                                  <span className="text-fg-faint">used in:</span>
+                                  {detail.projects.map((projId) => {
+                                    const idx = projectsData.findIndex((p) => p.id === projId);
+                                    const proj = projectsData[idx];
+                                    if (!proj) return null;
+                                    return (
+                                      <button
+                                        key={projId}
+                                        type="button"
+                                        onClick={() => {
+                                          sfx.click();
+                                          selectProject(idx);
+                                        }}
+                                        className="rounded border border-accent/30 bg-accent/10 px-2 py-0.5 text-accent transition-colors hover:bg-accent/20"
+                                      >
+                                        ~/{proj.title}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </li>
+                );
+              })}
             </ul>
           </motion.div>
 
@@ -130,6 +309,9 @@ export default function Skills() {
             </motion.div>
           </div>
         </div>
+
+        {/* Interactive Wireframe-to-Production UI X-Ray Slider */}
+        <XRaySlider />
 
         {/* Capabilities */}
         <div className="mt-20">

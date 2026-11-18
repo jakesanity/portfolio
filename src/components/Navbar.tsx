@@ -1,19 +1,24 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Command, Menu, X } from "lucide-react";
+import { CloudSun, Command, Menu, Palette, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useDavaoWeather } from "../lib/api";
 import { useActiveSection, useClock, useIsMac, useScrollProgress } from "../lib/hooks";
 import { SYSTEM_VERSION, scrollToSection, sections } from "../lib/sections";
+import { sfx, useSystemSound, useSystemTheme } from "../lib/system";
 
 interface Props {
   onOpenPalette: () => void;
 }
 
-/** Top system bar: brand, module tabs, clock and command palette trigger. */
+/** Top system bar: brand, module tabs, theme/audio controls, clock and command palette trigger. */
 export default function Navbar({ onOpenPalette }: Props) {
   const active = useActiveSection();
   const progress = useScrollProgress();
   const { time } = useClock();
   const isMac = useIsMac();
+  const weather = useDavaoWeather();
+  const { spec, cycleTheme } = useSystemTheme();
+  const { soundEnabled, toggleSound } = useSystemSound();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -28,14 +33,16 @@ export default function Navbar({ onOpenPalette }: Props) {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-        scrolled ? "border-b border-white/[0.07] bg-ink-900/75 backdrop-blur-xl" : "border-b border-transparent"
-      }`}
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${scrolled ? "border-b border-white/[0.07] bg-ink-900/75 backdrop-blur-xl" : "border-b border-transparent"
+        }`}
     >
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 sm:px-8">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-4 px-5 sm:px-8">
         <button
           id="nav-home"
-          onClick={() => scrollToSection("top")}
+          onClick={() => {
+            sfx.click();
+            scrollToSection("top");
+          }}
           className="group flex items-center gap-3"
           aria-label="Back to top"
         >
@@ -57,10 +64,12 @@ export default function Navbar({ onOpenPalette }: Props) {
               <button
                 key={s.id}
                 id={`nav-${s.id}`}
-                onClick={() => scrollToSection(s.id)}
-                className={`relative rounded-md px-3 py-1.5 text-[13px] transition-colors ${
-                  isActive ? "text-fg" : "text-fg-subtle hover:text-fg"
-                }`}
+                onClick={() => {
+                  sfx.tick();
+                  scrollToSection(s.id);
+                }}
+                className={`relative rounded-md px-3 py-1.5 text-[13px] transition-colors ${isActive ? "text-fg" : "text-fg-subtle hover:text-fg"
+                  }`}
               >
                 {isActive && (
                   <motion.span
@@ -78,15 +87,59 @@ export default function Navbar({ onOpenPalette }: Props) {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3 lg:ml-0">
-          <div className="hidden items-center gap-2 font-mono text-[11px] text-fg-subtle xl:flex">
+        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          <div
+            title={
+              weather
+                ? `Davao City Live Telemetry · ${weather.condition}, ${weather.tempC}°C, Humidity ${weather.humidity}%, Wind ${weather.windKph} km/h`
+                : "Davao City Local Time"
+            }
+            className="hidden items-center gap-2.5 pr-1 font-mono text-[11px] text-fg-subtle xl:flex"
+          >
             <span className="status-dot" />
+            {weather && (
+              <span className="inline-flex items-center gap-1 text-fg-muted">
+                <CloudSun className="h-3.5 w-3.5 text-accent" />
+                <span>DVO {weather.tempC}°C</span>
+                <span className="text-fg-faint">·</span>
+              </span>
+            )}
             <span>PHT {time}</span>
           </div>
 
+          {/* Signal Theme Switcher */}
+          <button
+            id="nav-theme-switch"
+            type="button"
+            onClick={cycleTheme}
+            title={`Signal theme: ${spec.label} (click to cycle)`}
+            className="flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-ink-800/80 px-2.5 font-mono text-[11px] text-fg-muted transition-colors hover:border-accent/40 hover:text-fg"
+          >
+            <Palette className="h-3.5 w-3.5 text-accent" />
+            <span className="hidden md:inline">{spec.id}</span>
+          </button>
+
+          {/* Audio Synth Toggle */}
+          <button
+            id="nav-sound-toggle"
+            type="button"
+            onClick={toggleSound}
+            title={soundEnabled ? "UI synth audio: ON" : "UI synth audio: MUTED"}
+            aria-label={soundEnabled ? "Mute UI audio" : "Unmute UI audio"}
+            className={`grid h-9 w-9 place-items-center rounded-lg border transition-colors ${soundEnabled
+              ? "border-accent/30 bg-ink-800/80 text-accent hover:border-accent/60"
+              : "border-white/10 bg-ink-800/80 text-fg-faint hover:border-white/20 hover:text-fg-muted"
+              }`}
+          >
+            {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+          </button>
+
           <button
             id="open-command-palette"
-            onClick={onOpenPalette}
+            onClick={() => {
+              sfx.click();
+              onOpenPalette();
+            }}
             className="flex h-9 items-center gap-2 rounded-lg border border-white/10 bg-ink-800/80 px-3 text-[13px] text-fg-muted transition-colors hover:border-white/20 hover:text-fg"
           >
             <Command className="h-3.5 w-3.5" />
@@ -99,7 +152,10 @@ export default function Navbar({ onOpenPalette }: Props) {
 
           <button
             id="nav-mobile-toggle"
-            onClick={() => setMobileOpen((v) => !v)}
+            onClick={() => {
+              sfx.tick();
+              setMobileOpen((v) => !v);
+            }}
             className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-fg-muted lg:hidden"
             aria-label="Toggle menu"
           >
@@ -127,6 +183,7 @@ export default function Navbar({ onOpenPalette }: Props) {
                 <li key={s.id}>
                   <button
                     onClick={() => {
+                      sfx.tick();
                       setMobileOpen(false);
                       scrollToSection(s.id);
                     }}

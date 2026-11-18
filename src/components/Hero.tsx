@@ -1,13 +1,20 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowDownRight, ArrowUpRight, Download } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Download, Zap } from "lucide-react";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { aboutData, personalInfo, projectsData, skillsData } from "../data/portfolio";
+import { useDavaoWeather, useFpsMonitor, useGitHubTelemetry } from "../lib/api";
 import { useIsMac } from "../lib/hooks";
 import { scrollToSection } from "../lib/sections";
+import { sfx, type CoreMode } from "../lib/system";
 
 const HeroCore = lazy(() => import("./HeroCore"));
 
 const ROLES = ["full-stack web systems", "workflow platforms", "machine learning tools", "clean user interfaces"];
+const CORE_MODES: { id: CoreMode; label: string }[] = [
+  { id: "sphere", label: "sphere" },
+  { id: "torus", label: "torus" },
+  { id: "helix", label: "helix" },
+];
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -38,22 +45,27 @@ function RotatingRole() {
 
 export default function Hero() {
   const isMac = useIsMac();
+  const fps = useFpsMonitor();
+  const weather = useDavaoWeather();
+  const { data: gh } = useGitHubTelemetry();
+  const [coreMode, setCoreMode] = useState<CoreMode>("sphere");
+  const [pulseCount, setPulseCount] = useState(0);
   const [first, ...rest] = personalInfo.name.split(" ");
   const last = rest.pop();
   const middle = rest.join(" ");
 
   const stats = [
-    { k: "Projects", v: String(projectsData.length).padStart(2, "0"), s: "shipped and in progress" },
+    { k: "Projects", v: String(projectsData.length).padStart(2, "0"), s: "featured systems built" },
     { k: "Stack", v: String(skillsData.technical.length).padStart(2, "0"), s: "core technologies" },
-    { k: "Certs", v: String(aboutData.certifications.length).padStart(2, "0"), s: "industry certificates" },
-    { k: "Since", v: "2022", s: "studying IT full-time" },
+    { k: "Certs", v: String(aboutData.certifications.length).padStart(2, "0"), s: "verified certificates" },
+    { k: "Since", v: "2021", s: "coding & building in IT" },
   ];
 
   return (
     <section id="top" className="relative isolate flex min-h-[100svh] flex-col overflow-hidden pt-16">
       {/* Background */}
       <div className="absolute inset-0 -z-10 bg-grid mask-fade-b opacity-70" />
-      <div className="absolute left-1/2 top-[-20%] -z-10 h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(198,255,61,0.08),transparent)]" />
+      <div className="absolute left-1/2 top-[-20%] -z-10 h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(var(--accent-rgb),0.08),transparent)]" />
 
       <div className="shell relative flex flex-1 items-center">
         <div className="grid w-full items-center gap-10 py-16 lg:grid-cols-12 lg:py-10">
@@ -118,11 +130,25 @@ export default function Hero() {
               transition={{ duration: 0.7, ease, delay: 0.7 }}
               className="mt-10 flex flex-wrap items-center gap-3"
             >
-              <button id="hero-explore-work" onClick={() => scrollToSection("work")} className="btn-primary group">
+              <button
+                id="hero-explore-work"
+                onClick={() => {
+                  sfx.click();
+                  scrollToSection("work");
+                }}
+                className="btn-primary group"
+              >
                 Explore work
                 <ArrowDownRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
               </button>
-              <a id="hero-download-cv" href={personalInfo.resumeUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost">
+              <a
+                id="hero-download-cv"
+                href={personalInfo.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => sfx.tick()}
+                className="btn-ghost"
+              >
                 <Download className="h-4 w-4" />
                 Download CV
               </a>
@@ -141,23 +167,58 @@ export default function Hero() {
             className="pointer-events-none absolute inset-0 opacity-40 lg:pointer-events-auto lg:relative lg:col-span-5 lg:aspect-square lg:opacity-100"
           >
             <Suspense fallback={<div className="absolute inset-0 bg-dots opacity-50 mask-radial" />}>
-              <HeroCore />
+              <HeroCore mode={coreMode} pulseCount={pulseCount} />
             </Suspense>
+
             <div className="pointer-events-none absolute inset-0 hidden font-mono text-[10px] uppercase tracking-[0.14em] text-fg-faint lg:block">
               <div className="absolute left-0 top-4 flex flex-col gap-1">
-                <span className="text-fg-subtle">core.sys</span>
-                <span>render / webgl</span>
+                <span className="text-fg-subtle">core.sys // {fps} fps</span>
+                <span>
+                  mode / {coreMode} {gh?.live ? `· gh:${gh.publicRepos} repos` : ""}
+                </span>
               </div>
               <div className="absolute right-0 top-4 text-right">
-                <span className="block text-fg-subtle">node</span>
-                <span>ph-mnl-01</span>
+                <span className="block text-fg-subtle">
+                  node // {weather ? `${weather.tempC}°c ${weather.condition}` : "live"}
+                </span>
+                <span>{personalInfo.coordinates.node}</span>
               </div>
               <div className="absolute bottom-4 left-0">
-                <span className="block">lat 14.5995 n</span>
-                <span>lon 120.9842 e</span>
+                <span className="block">lat {personalInfo.coordinates.lat}</span>
+                <span>lon {personalInfo.coordinates.lon}</span>
               </div>
-              <div className="absolute bottom-4 right-0 flex items-center gap-2">
-                <span className="status-dot" /> online
+
+              {/* Interactive Geometry Switcher HUD */}
+              <div className="pointer-events-auto absolute bottom-3 right-0 flex items-center gap-1 rounded-lg border border-white/10 bg-ink-900/85 p-1 backdrop-blur">
+                {CORE_MODES.map((m) => {
+                  const active = coreMode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        sfx.tick();
+                        setCoreMode(m.id);
+                      }}
+                      className={`rounded px-2 py-1 text-[10px] transition-colors ${
+                        active ? "bg-accent/15 text-accent" : "text-fg-subtle hover:text-fg"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    sfx.pulse();
+                    setPulseCount((c) => c + 1);
+                  }}
+                  title="Send energy pulse"
+                  className="ml-0.5 grid h-6 w-6 place-items-center rounded border border-accent/30 bg-accent/10 text-accent transition-transform active:scale-90"
+                >
+                  <Zap className="h-3 w-3" />
+                </button>
               </div>
             </div>
           </motion.div>
@@ -190,7 +251,10 @@ export default function Hero() {
       </motion.div>
 
       <button
-        onClick={() => scrollToSection("about")}
+        onClick={() => {
+          sfx.tick();
+          scrollToSection("about");
+        }}
         className="absolute bottom-28 right-8 hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-subtle transition-colors hover:text-fg xl:flex"
       >
         scroll <ArrowUpRight className="h-3 w-3 rotate-90" />

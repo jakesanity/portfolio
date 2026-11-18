@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import About from "./components/About";
 import BootSequence from "./components/BootSequence";
 import CircuitRail from "./components/CircuitRail";
 import CommandPalette from "./components/CommandPalette";
 import Contact from "./components/Contact";
 import Experience from "./components/Experience";
+import ExplorerHud from "./components/ExplorerHud";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
@@ -16,11 +17,24 @@ import Terminal from "./components/Terminal";
 function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      const target = (e.target as HTMLElement | null)?.closest?.(".panel") as HTMLElement | null;
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      target.style.setProperty("--spot-x", `${e.clientX - rect.left}px`);
+      target.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
+    };
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onPointerMove);
+  }, []);
+
   return (
     <div className="relative min-h-screen">
       <BootSequence />
       <Navbar onOpenPalette={() => setPaletteOpen(true)} />
       <CircuitRail />
+      <ExplorerHud />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
 
       <main>

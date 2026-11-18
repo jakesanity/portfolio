@@ -29,8 +29,14 @@ export function scrollToSection(id: SectionId) {
 }
 
 export const FOCUS_TERMINAL_EVENT = "ajb:focus-terminal";
+export const SELECT_PROJECT_EVENT = "ajb:select-project";
 
 export function focusTerminal() {
   scrollToSection("shell");
   window.setTimeout(() => window.dispatchEvent(new Event(FOCUS_TERMINAL_EVENT)), 450);
+}
+
+export function selectProject(index: number) {
+  window.dispatchEvent(new CustomEvent<number>(SELECT_PROJECT_EVENT, { detail: index }));
+  scrollToSection("work");
 }

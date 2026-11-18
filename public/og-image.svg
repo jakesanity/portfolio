@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#c6ff3d" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#0a0a0b" stop-opacity="0" />
+    </radialGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M 56 0 L 0 0 0 56" fill="none" stroke="rgba(255,255,255,0.045)" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0a0a0b" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect width="1200" height="630" fill="url(#glow)" />
+
+  <!-- Outer Frame -->
+  <rect x="44" y="44" width="1112" height="542" rx="16" fill="#0e0e10" fill-opacity="0.72" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" />
+
+  <!-- Top System Bar -->
+  <line x1="44" y1="112" x2="1156" y2="112" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+  <rect x="76" y="64" width="32" height="32" rx="6" fill="#121214" stroke="rgba(255,255,255,0.15)" />
+  <text x="84" y="85" font-family="monospace" font-size="14" font-weight="700" fill="#ededef">A<tspan fill="#c6ff3d">/</tspan></text>
+  <text x="122" y="85" font-family="sans-serif" font-size="16" font-weight="700" fill="#ededef">AJB<tspan fill="#c6ff3d">/</tspan>OS</text>
+  <text x="200" y="85" font-family="monospace" font-size="13" fill="#6b6b74">v2026.10 · ph-dvo-01</text>
+
+  <circle cx="1010" cy="80" r="4" fill="#c6ff3d" />
+  <text x="1024" y="84" font-family="monospace" font-size="12" fill="#a1a1aa" letter-spacing="1.5">AVAILABLE FOR HIRE</text>
+
+  <!-- Main Identity Copy -->
+  <text x="84" y="190" font-family="monospace" font-size="15" fill="#6b6b74"><tspan fill="#c6ff3d">$</tspan> whoami</text>
+  <text x="84" y="278" font-family="sans-serif" font-size="76" font-weight="700" fill="#ededef" letter-spacing="-2.5">Aldwin James</text>
+  <text x="84" y="362" font-family="sans-serif" font-size="76" font-weight="700" fill="#6b6b74" letter-spacing="-2.5">Bucio<tspan fill="#c6ff3d">.</tspan></text>
+
+  <text x="84" y="426" font-family="monospace" font-size="20" fill="#a1a1aa">&gt; Full-Stack Developer &amp; UI/UX Designer · BSIT @ UIC Davao</text>
+
+  <!-- Bottom Telemetry Bar -->
+  <line x1="44" y1="490" x2="1156" y2="490" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+  <text x="84" y="542" font-family="monospace" font-size="14" fill="#6b6b74">SYSTEMS: <tspan fill="#ededef">RECHECK · ELDERLYCARE · INSIGHTAI</tspan></text>
+  <text x="640" y="542" font-family="monospace" font-size="14" fill="#6b6b74">STACK: <tspan fill="#c6ff3d">REACT · TYPESCRIPT · LARAVEL · PYTHON · SQL</tspan></text>
+</svg>

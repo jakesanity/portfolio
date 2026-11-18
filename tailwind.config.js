@@ -20,7 +20,7 @@ export default {
           faint: '#45454c',
         },
         accent: {
-          DEFAULT: '#c6ff3d',
+          DEFAULT: 'rgb(var(--accent-tw) / <alpha-value>)',
           dim: '#9fd118',
           ink: '#0b0f00',
         },

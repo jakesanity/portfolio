@@ -7,11 +7,15 @@ import {
   Github,
   Linkedin,
   Mail,
+  Palette,
   TerminalSquare,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { personalInfo, projectsData } from "../data/portfolio";
-import { focusTerminal, scrollToSection, sections } from "../lib/sections";
+import { focusTerminal, scrollToSection, sections, selectProject } from "../lib/sections";
+import { sfx, useSystemSound, useSystemTheme } from "../lib/system";
 
 interface Props {
   open: boolean;
@@ -50,11 +54,14 @@ function Item({
 /** Global command palette (Ctrl/Cmd + K). */
 export default function CommandPalette({ open, onOpenChange }: Props) {
   const [copied, setCopied] = useState(false);
+  const { theme, themes, setTheme } = useSystemTheme();
+  const { soundEnabled, toggleSound } = useSystemSound();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        sfx.click();
         onOpenChange(!open);
       }
     };
@@ -63,6 +70,7 @@ export default function CommandPalette({ open, onOpenChange }: Props) {
   }, [open, onOpenChange]);
 
   const run = (fn: () => void) => {
+    sfx.tick();
     onOpenChange(false);
     window.setTimeout(fn, 60);
   };
@@ -70,6 +78,7 @@ export default function CommandPalette({ open, onOpenChange }: Props) {
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(personalInfo.email);
+      sfx.confirm();
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -89,7 +98,7 @@ export default function CommandPalette({ open, onOpenChange }: Props) {
         <span className="font-mono text-sm text-accent">&gt;</span>
         <Command.Input
           autoFocus
-          placeholder="Type a command or search..."
+          placeholder="Type a command, project, theme, or search..."
           className="h-14 w-full bg-transparent text-[15px] text-fg placeholder:text-fg-faint focus:outline-none"
         />
         <span className="kbd">ESC</span>
@@ -114,11 +123,57 @@ export default function CommandPalette({ open, onOpenChange }: Props) {
           ))}
         </Command.Group>
 
+        <Command.Group heading="Projects">
+          {projectsData.map((p, i) => (
+            <Item
+              key={p.title}
+              value={`project ${p.title} ${p.category} ${p.stack.join(" ")}`}
+              onSelect={() => run(() => selectProject(i))}
+              icon={<ExternalLink className="h-3.5 w-3.5" />}
+              hint={p.category}
+            >
+              Inspect {p.title}
+            </Item>
+          ))}
+        </Command.Group>
+
+        <Command.Group heading="System & Theme">
+          {themes.map((t) => (
+            <Item
+              key={t.id}
+              value={`theme ${t.id} ${t.label} color accent`}
+              onSelect={() => run(() => setTheme(t.id))}
+              icon={<Palette className="h-3.5 w-3.5" style={{ color: t.hex }} />}
+              hint={theme === t.id ? "active" : t.id}
+            >
+              Theme: {t.label}
+            </Item>
+          ))}
+          <Item
+            value="toggle sound audio mute unmute synth"
+            onSelect={() => run(toggleSound)}
+            icon={soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            hint={soundEnabled ? "on" : "muted"}
+          >
+            {soundEnabled ? "Mute UI Synth Audio" : "Enable UI Synth Audio"}
+          </Item>
+        </Command.Group>
+
         <Command.Group heading="Actions">
-          <Item value="open terminal shell" onSelect={() => run(focusTerminal)} icon={<TerminalSquare className="h-3.5 w-3.5" />} hint="shell">
+          <Item
+            value="open terminal shell"
+            onSelect={() => run(focusTerminal)}
+            icon={<TerminalSquare className="h-3.5 w-3.5" />}
+            hint="shell"
+          >
             Open interactive terminal
           </Item>
-          <Item value="copy email address" onSelect={copyEmail} icon={<Copy className="h-3.5 w-3.5" />} hint={copied ? "copied" : undefined}>
+          <Item
+            value="copy email address"
+            onSelect={copyEmail}
+            icon={<Copy className="h-3.5 w-3.5" />}
+            hint={copied ? "copied" : undefined}
+          >
             {copied ? "Email copied to clipboard" : "Copy email address"}
           </Item>
           <Item
@@ -138,25 +193,21 @@ export default function CommandPalette({ open, onOpenChange }: Props) {
           </Item>
         </Command.Group>
 
-        <Command.Group heading="Projects">
-          {projectsData.map((p) => (
-            <Item
-              key={p.title}
-              value={`project ${p.title} ${p.category}`}
-              onSelect={() => run(() => scrollToSection("work"))}
-              icon={<ExternalLink className="h-3.5 w-3.5" />}
-              hint={p.category}
-            >
-              {p.title}
-            </Item>
-          ))}
-        </Command.Group>
-
         <Command.Group heading="Links">
-          <Item value="github" onSelect={() => run(() => window.open(personalInfo.github, "_blank"))} icon={<Github className="h-3.5 w-3.5" />} hint="external">
+          <Item
+            value="github"
+            onSelect={() => run(() => window.open(personalInfo.github, "_blank"))}
+            icon={<Github className="h-3.5 w-3.5" />}
+            hint="external"
+          >
             GitHub
           </Item>
-          <Item value="linkedin" onSelect={() => run(() => window.open(personalInfo.linkedin, "_blank"))} icon={<Linkedin className="h-3.5 w-3.5" />} hint="external">
+          <Item
+            value="linkedin"
+            onSelect={() => run(() => window.open(personalInfo.linkedin, "_blank"))}
+            icon={<Linkedin className="h-3.5 w-3.5" />}
+            hint="external"
+          >
             LinkedIn
           </Item>
         </Command.Group>
@@ -165,8 +216,13 @@ export default function CommandPalette({ open, onOpenChange }: Props) {
       <div className="flex items-center justify-between border-t border-white/[0.07] px-4 py-2.5 font-mono text-[10px] text-fg-faint">
         <span>AJB/OS command palette</span>
         <span className="flex items-center gap-3">
-          <span className="flex items-center gap-1"><span className="kbd">Up</span><span className="kbd">Dn</span> navigate</span>
-          <span className="flex items-center gap-1"><span className="kbd">Enter</span> run</span>
+          <span className="flex items-center gap-1">
+            <span className="kbd">Up</span>
+            <span className="kbd">Dn</span> navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="kbd">Enter</span> run
+          </span>
         </span>
       </div>
     </Command.Dialog>
